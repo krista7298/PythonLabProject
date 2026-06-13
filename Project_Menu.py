@@ -1,11 +1,11 @@
 from datetime import datetime
+import openpyxl
+from openpyxl.chart import BarChart, LineChart, Reference
 
-# Function to convert Fahrenheit to Celsius
 def convertData(tempF):
     return (tempF - 32) * 5 / 9
 
 
-# Function to insert data into the CSV file
 def insertData(path, data):
 
     try:
@@ -16,7 +16,6 @@ def insertData(path, data):
         print("Error writing to file:", e)
 
 
-# Function to display the contents of the CSV file
 def viewData(path):
 
     try:
@@ -30,7 +29,6 @@ def viewData(path):
         print("Error reading file:", e)
 
 
-# Function to collect user input
 def getInput():
 
     entryCount = int(input("How many entries are you inputting?\n"))
@@ -41,9 +39,6 @@ def getInput():
 
         tempF = float(input("Enter the highest temp for the inputted date:\n"))
 
-        # Function: convertData
-        # Argument: temperature in Fahrenheit
-        # Returns: temperature in Celsius
         convertedTemp = convertData(tempF)
 
         data = f"{dateEntered},{tempF},{convertedTemp}"
@@ -57,6 +52,103 @@ def getInput():
 
         except Exception as e:
             print("Error saving data:", e)
+
+
+# Function: createChart
+# Argument 1: path to CSV file (string)
+# Argument 2: chart type (string)
+# Return Value: None
+def createChart(path, chartType):
+
+    print("\nChoose Data Source")
+    print("1 Fahrenheit")
+    print("2 Celsius")
+
+    sourceChoice = input("Enter selection: ")
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+
+    ws["A1"] = "Date"
+
+    if sourceChoice == "1":
+        ws["B1"] = "Fahrenheit"
+    else:
+        ws["B1"] = "Celsius"
+
+    rowNumber = 2
+
+    with open(path, "r") as file:
+
+        for line in file:
+
+            data = line.strip().split(",")
+
+            if len(data) >= 3:
+
+                ws.cell(row=rowNumber, column=1).value = data[0]
+
+                if sourceChoice == "1":
+                    ws.cell(row=rowNumber, column=2).value = float(data[1])
+                else:
+                    ws.cell(row=rowNumber, column=2).value = float(data[2])
+
+                rowNumber += 1
+
+    labels = Reference(
+        ws,
+        min_col=1,
+        min_row=2,
+        max_row=rowNumber - 1
+    )
+
+    chartData = Reference(
+        ws,
+        min_col=2,
+        min_row=1,
+        max_row=rowNumber - 1
+    )
+
+    if chartType == "bar":
+        chart = BarChart()
+    else:
+        chart = LineChart()
+
+    chart.title = "kriagu7298 06/12/2026"
+
+    chart.x_axis.title = "Date"
+
+    if sourceChoice == "1":
+        chart.y_axis.title = "Fahrenheit"
+    else:
+        chart.y_axis.title = "Celsius"
+
+    chart.add_data(chartData, titles_from_data=True)
+
+    chart.set_categories(labels)
+
+    ws.add_chart(chart, "D2")
+
+    wb.save("final.xlsx")
+
+    print("Chart saved as final.xlsx")
+
+
+# Function: generateReport
+# Argument: path to CSV file (string)
+# Return Value: None
+def generateReport(path):
+
+    print("\nChoose Graph Type")
+    print("1 Bar Chart")
+    print("2 Line Chart")
+
+    graphChoice = input("Enter selection: ")
+
+    if graphChoice == "1":
+        createChart(path, "bar")
+    else:
+        createChart(path, "line")
 
 
 print("kriagu7298 Spreadsheet Automation Menu")
@@ -84,6 +176,11 @@ elif user_choice == "2":
     print("You selected", user_choice, "at", str(datetime.now()))
     viewData("ZooData.csv")
 
+elif user_choice == "3":
+
+    print("You selected", user_choice, "at", str(datetime.now()))
+    generateReport("ZooData.csv")
+
 else:
 
-    print("Error: The chosen functionality is not implemented yet")
+    print("Invalid Selection")
